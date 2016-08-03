@@ -1,68 +1,93 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Redux basic example</title>
     <script src="https://npmcdn.com/redux@latest/dist/redux.min.js"></script>
-  </head>
-  <body>
-    <div>
-      <p>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/ramda/0.21.0/ramda.min.js"></script>
+</head>
+<body>
+<div>
+    <p>
         Clicked: <span id="value">0</span> times
         <button id="increment">+</button>
         <button id="decrement">-</button>
         <button id="incrementIfOdd">Increment if odd</button>
         <button id="incrementAsync">Increment async</button>
-      </p>
-    </div>
-    <script>
-      function counter(state, action) {
-        if (typeof state === 'undefined') {
-          return 0
-        }
+    </p>
+</div>
+<script>
+    function changeStateFunc(diff) {
+        return function (state) {
+            if (typeof state === 'undefined') {
+                return 0;
+            }
 
-        switch (action.type) {
-          case 'INCREMENT':
-            return state + 1
-          case 'DECREMENT':
-            return state - 1
-          default:
-            return state
-        }
-      }
+            if (diff === 0) {
+                return state;
+            } else {
+                return state + diff;
+            }
+        };
+    }
+    const TYPE_INCREMENT = 'INCREMENT';
+    const TYPE_DECREMENT = 'DECREMENT';
 
-      var store = Redux.createStore(counter)
-      var valueEl = document.getElementById('value')
+    const increase = changeStateFunc(1);
+    const decrease = changeStateFunc(-1);
+    const noChange = changeStateFunc(0);
+    const actions = {
+        [TYPE_INCREMENT]: increase,
+        [TYPE_DECREMENT]: decrease
+    };
 
-      function render() {
-        valueEl.innerHTML = store.getState().toString()
-      }
+    //action creators
+    function createAction(type) {
+        return {type};
+    }
+    const dispatchFunc = R.curry((type, condition) => {
+        return () => {
+            if (condition) {
+                store.dispatch(createAction(type));
+            }
+        };
+    });
 
-      render()
-      store.subscribe(render)
+    const increaseActionFunc = dispatchFunc(TYPE_INCREMENT);
+    const decreaseActionFunc = dispatchFunc(TYPE_DECREMENT);
 
-      document.getElementById('increment')
-        .addEventListener('click', function () {
-          store.dispatch({ type: 'INCREMENT' })
-        })
 
-      document.getElementById('decrement')
-        .addEventListener('click', function () {
-          store.dispatch({ type: 'DECREMENT' })
-        })
+    //reducer
+    function counter(state, action) {
+        let func = actions[action.type] || noChange;
+        return func(state);
+    }
 
-      document.getElementById('incrementIfOdd')
-        .addEventListener('click', function () {
-          if (store.getState() % 2 !== 0) {
-            store.dispatch({ type: 'INCREMENT' })
-          }
-        })
+    const store = Redux.createStore(counter);
+    const valueEl = document.getElementById('value');
 
-      document.getElementById('incrementAsync')
-        .addEventListener('click', function () {
-          setTimeout(function () {
-            store.dispatch({ type: 'INCREMENT' })
-          }, 1000)
-        })
-    </script>
-  </body>
+    const render = (function render() {
+        valueEl.innerHTML = store.getState().toString();
+        return render;
+    })();
+
+
+    store.subscribe(render);
+
+    document.getElementById('increment')
+            .addEventListener('click', increaseActionFunc(true));
+
+    document.getElementById('decrement')
+            .addEventListener('click', decreaseActionFunc(true));
+
+    document.getElementById('incrementIfOdd')
+            .addEventListener('click', function () {
+                increaseActionFunc(store.getState() % 2 !== 0)();
+            });
+
+    document.getElementById('incrementAsync')
+            .addEventListener('click', function () {
+                setTimeout(increaseActionFunc(true), 1000)
+            });
+</script>
+</body>
 </html>
