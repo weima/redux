@@ -1,38 +1,35 @@
-const todo = (state, action) => {
-  switch (action.type) {
-    case 'ADD_TODO':
-      return {
-        id: action.id,
-        text: action.text,
-        completed: false
-      }
-    case 'TOGGLE_TODO':
-      if (state.id !== action.id) {
-        return state
-      }
+import * as actionTypes from '../actions/actionTypes';
 
-      return Object.assign({}, state, {
-        completed: !state.completed
-      })
-    default:
-      return state
-  }
-}
+const newTodo = ({id, text}, state) => {
+    return {id, text, completed: false};
+};
+
+const addOneMoreToDo = (action, state) =>{
+    return [...state, newTodo(action, undefined)];
+};
+
+const noChange = (action, state) => state;
+
+const toggleState = (action, state) => {
+    if(action.id !== state.id){
+        return state;
+    }else{
+        return Object.assign({}, state, {completed: !state.completed});
+    }
+};
+
+const toggleStates = (action, states) => {
+    return states.map(s => toggleState(action, s));
+};
 
 const todos = (state = [], action) => {
-  switch (action.type) {
-    case 'ADD_TODO':
-      return [
-        ...state,
-        todo(undefined, action)
-      ]
-    case 'TOGGLE_TODO':
-      return state.map(t =>
-        todo(t, action)
-      )
-    default:
-      return state
-  }
-}
+    const reducers = {
+        [actionTypes.ACTION_ADD_TODO]:addOneMoreToDo,
+        [actionTypes.ACTION_TOGGLE_TODO]:toggleStates
+    };
+
+    let reducer = reducers[action.type] || noChange;
+    return reducer(action, state);
+};
 
 export default todos
