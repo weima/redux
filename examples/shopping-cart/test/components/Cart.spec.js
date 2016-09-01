@@ -7,11 +7,11 @@ import Product from '../../components/Product'
 function setup(total, products = []) {
   const actions = {
     onCheckoutClicked: expect.createSpy()
-  }
+  };
 
   const component = shallow(
     <Cart products={products} total={total} {...actions} />
-  )
+  );
 
   return {
     component: component,
